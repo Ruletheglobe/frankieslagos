@@ -4989,6 +4989,16 @@ function answer(q){
 .ed-done b{display:block;color:#5FB588;font-size:12.5px;margin-bottom:3px}
 .ed-done span{font-size:11.5px;color:#9A9484}
 .ed-done i{font-style:normal;color:#EDEADF;font-weight:600}
+.ed-done .ed-pub{
+  display:block;margin-top:9px;text-align:center;text-decoration:none;
+  background:#5FB588;color:#10100B;font-size:12px;font-weight:700;
+  border-radius:8px;padding:8px 10px;letter-spacing:.2px;
+}
+.ed-done .ed-pub:hover{background:#74C79A}
+.ed-done .ed-shut{
+  display:block;width:100%;margin-top:6px;background:none;border:0;cursor:pointer;
+  color:#7E796B;font-size:11px;padding:2px;font-family:inherit;
+}
 
 /* the tab that lets you back in after closing the panel */
 .ed-reopen{
@@ -5045,6 +5055,9 @@ function answer(q){
   var CFG = null, START = '', items = [], panel = null, reopen = null;
   var MARK = '<script id="fl-config" type="application/json">';
   var END  = '<' + '/script>';
+
+  /* where a saved index.html goes back up to */
+  var PUBLISH = 'https://github.com/Ruletheglobe/frankieslagos/upload/main';
 
   function esc(s){
     return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){
@@ -5346,9 +5359,13 @@ function answer(q){
     var out = src.slice(0, i + MARK.length) + '\n' +
               JSON.stringify(CFG, null, 2) + '\n' + src.slice(j);
 
+    /* Served over http(s) the file has to land as index.html, because that is
+       the name GitHub Pages serves. Opened from disk it keeps its own name. */
+    var live = location.protocol === 'http:' || location.protocol === 'https:';
+
     var a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([out], {type:'text/html'}));
-    a.download = 'frankies-lagos.html';
+    a.download = live ? 'index.html' : 'frankies-lagos.html';
     document.body.appendChild(a);
     a.click();
     setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
@@ -5357,9 +5374,26 @@ function answer(q){
     count();
 
     var d = panel.querySelector('.ed-done');
-    d.hidden = false;
     clearTimeout(window.__edT);
-    window.__edT = setTimeout(function(){ d.hidden = true; }, 10000);
+
+    if(live){
+      d.innerHTML =
+        '<b>Saved as index.html in your Downloads.</b>' +
+        '<span>Drop that file on the GitHub page below, then press ' +
+        '<i>Commit changes</i>. The live site updates in under a minute.</span>' +
+        '<a class="ed-pub" href="' + PUBLISH + '" target="_blank" rel="noopener">' +
+        'Open the GitHub upload page</a>' +
+        '<button type="button" class="ed-shut">Dismiss</button>';
+      d.querySelector('.ed-shut').onclick = function(){ d.hidden = true; };
+      d.hidden = false;
+    } else {
+      d.innerHTML =
+        '<b>Saved to your Downloads folder.</b>' +
+        '<span>Look for <i>frankies-lagos.html</i>. That downloaded file is now ' +
+        'your site. Keep it, and open that one next time you edit.</span>';
+      d.hidden = false;
+      window.__edT = setTimeout(function(){ d.hidden = true; }, 10000);
+    }
   }
 
   /* ── open and close ───────────────────────────────────────────── */
